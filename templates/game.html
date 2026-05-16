@@ -1,0 +1,399 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>AI vs Human</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&display=swap');
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Inter', Arial, sans-serif;
+    background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+    color: white;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    padding: 24px;
+  }
+
+  .container {
+    background: rgba(255,255,255,0.05);
+    backdrop-filter: blur(12px);
+    border: 1px solid rgba(255,255,255,0.1);
+    padding: 32px;
+    border-radius: 24px;
+    width: 100%;
+    max-width: 560px;
+  }
+
+  .header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+  }
+
+  #roundText {
+    font-size: 13px;
+    font-weight: 600;
+    color: #a8b2d8;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+  }
+
+  #scoreText {
+    font-size: 13px;
+    font-weight: 600;
+    color: #a8b2d8;
+  }
+
+  .question {
+    font-size: 18px;
+    font-weight: 700;
+    margin-bottom: 20px;
+    color: #e6f1ff;
+  }
+
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+    margin-bottom: 24px;
+  }
+
+  /* ── 이미지 카드 ── */
+  .img-wrap {
+    position: relative;
+    border-radius: 12px;
+    overflow: visible;       /* 툴팁이 카드 밖으로 나오도록 */
+    aspect-ratio: 1;
+    cursor: pointer;
+    border: 3px solid transparent;
+    transition: border-color 0.2s, transform 0.15s;
+  }
+
+  .img-wrap > img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+    pointer-events: none;
+    border-radius: 9px;
+  }
+
+  .img-wrap:hover { transform: scale(1.03); }
+
+  .img-wrap.selected {
+    border-color: #e040fb;
+    box-shadow: 0 0 0 2px #e040fb55;
+  }
+
+  .img-wrap.selected::after {
+    content: "✓";
+    position: absolute;
+    top: 6px; right: 8px;
+    background: #e040fb;
+    color: white;
+    font-size: 13px;
+    font-weight: 700;
+    width: 22px; height: 22px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 2;
+  }
+
+  .img-wrap.correct {
+    border-color: #00e676;
+    box-shadow: 0 0 0 2px #00e67655;
+  }
+
+  .img-wrap.correct::after {
+    content: "AI";
+    position: absolute;
+    top: 6px; right: 8px;
+    background: #00e676;
+    color: #000;
+    font-size: 11px;
+    font-weight: 800;
+    padding: 2px 7px;
+    border-radius: 10px;
+    z-index: 2;
+  }
+
+  .img-wrap.wrong-selected {
+    border-color: #ff5252;
+    box-shadow: 0 0 0 2px #ff525255;
+  }
+
+  /* ── 툴팁 ── */
+  .tooltip {
+    display: none;
+    position: absolute;
+    bottom: calc(100% + 8px);
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(15, 20, 40, 0.95);
+    border: 1px solid rgba(255,255,255,0.15);
+    color: #e6f1ff;
+    font-size: 12px;
+    font-weight: 500;
+    line-height: 1.5;
+    padding: 8px 12px;
+    border-radius: 10px;
+    white-space: normal;
+    width: 160px;
+    text-align: center;
+    z-index: 99;
+    pointer-events: none;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+  }
+
+  .tooltip::after {
+    content: "";
+    position: absolute;
+    top: 100%; left: 50%;
+    transform: translateX(-50%);
+    border: 6px solid transparent;
+    border-top-color: rgba(15, 20, 40, 0.95);
+  }
+
+  /* 제출 후에만 툴팁 표시 */
+  .img-wrap.revealed:hover .tooltip { display: block; }
+
+  /* ── 버튼 ── */
+  .submit-btn {
+    width: 100%;
+    padding: 14px;
+    font-size: 16px;
+    font-weight: 700;
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    color: white;
+    border: none;
+    border-radius: 14px;
+    cursor: pointer;
+    transition: opacity 0.2s, transform 0.15s;
+    box-shadow: 0 4px 20px rgba(102,126,234,0.35);
+  }
+
+  .submit-btn:hover { opacity: 0.9; transform: translateY(-1px); }
+  .submit-btn:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+
+  #result {
+    margin-top: 18px;
+    font-size: 15px;
+    text-align: center;
+    line-height: 1.7;
+    color: #e6f1ff;
+  }
+
+  .result-correct { color: #00e676; font-weight: 700; font-size: 20px; }
+  .result-wrong   { color: #ff5252; font-weight: 700; font-size: 20px; }
+
+  .action-btns {
+    display: flex;
+    gap: 10px;
+    margin-top: 14px;
+    justify-content: center;
+  }
+
+  .action-btn {
+    padding: 10px 24px;
+    border-radius: 50px;
+    border: none;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: transform 0.15s;
+  }
+
+  .action-btn:hover { transform: translateY(-2px); }
+  .action-btn.primary   { background: #667eea; color: white; }
+  .action-btn.secondary { background: rgba(255,255,255,0.1); color: white; border: 1px solid rgba(255,255,255,0.2); }
+
+  .gameover {
+    text-align: center;
+    padding: 20px 0;
+  }
+
+  .gameover h2 { font-size: 32px; margin-bottom: 12px; }
+  .gameover .final-score { font-size: 48px; font-weight: 900; color: #e0c3fc; margin: 16px 0; }
+  .gameover p { color: #8892b0; margin-bottom: 24px; }
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="header">
+    <span id="roundText"></span>
+    <span id="scoreText"></span>
+  </div>
+
+  <p class="question">AI가 생성한 이미지를 모두 골라보세요</p>
+
+  <div class="grid">
+    {% for img in images %}
+    <div class="img-wrap" data-index="{{ loop.index0 }}" data-file="{{ img.file }}">
+      <img src="/static/images/{{ img.file }}">
+      <div class="tooltip"></div>
+    </div>
+    {% endfor %}
+  </div>
+
+  <button class="submit-btn" id="submitBtn">제출하기</button>
+  <div id="result"></div>
+</div>
+
+<script>
+// =====================================================================
+// ✏️  툴팁 수정 방법
+// 아래 IMAGE_TOOLTIPS 객체에서 파일명을 키로 하여 툴팁 문구를 수정하세요.
+//
+// AI 이미지 예시:
+//   "ai1.jpg": "손가락 개수가 6개로 부자연스럽고, 배경 텍스트가 깨져 있어 AI 이미지입니다."
+//
+// 사람 이미지 예시:
+//   "h1.jpg": "AI 이미지가 아닙니다!"
+//
+// 새 이미지를 추가할 경우 동일한 형식으로 한 줄 추가하면 됩니다.
+// =====================================================================
+const IMAGE_TOOLTIPS = {
+  // AI 이미지
+  "ai1.jpg": "손가락 개수가 부자연스럽고 손 모양이 왜곡되어 있어 AI 이미지입니다.",
+  "ai2.jpg": "배경의 텍스트가 의미 없이 깨져 있어 AI 이미지입니다.",
+  "ai3.jpg": "눈동자 좌우 대칭이 맞지 않고 피부 질감이 지나치게 매끄러워 AI 이미지입니다.",
+  "ai4.jpg": "귀 모양과 머리카락 경계 부분이 부자연스럽게 흐릿해 AI 이미지입니다.",
+  // 사람 이미지
+  "h1.jpg": "AI 이미지가 아닙니다!",
+  "h2.jpg": "AI 이미지가 아닙니다!",
+  "h3.jpg": "AI 이미지가 아닙니다!",
+  "h4.jpg": "AI 이미지가 아닙니다!",
+  "h5.jpg": "AI 이미지가 아닙니다!",
+  "h6.jpg": "AI 이미지가 아닙니다!"
+};
+// =====================================================================
+
+let selected = [];
+let round = Number(localStorage.getItem("round"));
+let score = Number(localStorage.getItem("score"));
+let infinite = localStorage.getItem("infinite") === "true";
+let totalRounds = {{ total_rounds }};
+let submitted = false;
+
+document.getElementById("roundText").innerText = infinite
+  ? "Round " + round
+  : "Round " + round + " / " + totalRounds;
+document.getElementById("scoreText").innerText = "점수 " + score;
+
+document.querySelectorAll('.img-wrap').forEach(wrap => {
+  wrap.addEventListener('click', function() {
+    if (submitted) return;
+    const index = Number(this.dataset.index);
+    if (selected.includes(index)) {
+      selected = selected.filter(i => i !== index);
+      this.classList.remove('selected');
+    } else {
+      selected.push(index);
+      this.classList.add('selected');
+    }
+  });
+});
+
+document.getElementById("submitBtn").addEventListener('click', function() {
+  if (submitted) return;
+  submitted = true;
+  this.disabled = true;
+
+  fetch('/check', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ selected, images: {{ images | tojson }} })
+  })
+  .then(res => res.json())
+  .then(data => {
+    if (data.is_correct) score++;
+    localStorage.setItem("score", score);
+
+    // 정답 표시 + 툴팁 세팅
+    document.querySelectorAll('.img-wrap').forEach(wrap => {
+      const i = Number(wrap.dataset.index);
+      const file = wrap.dataset.file;
+
+      // 툴팁 텍스트 삽입
+      const tip = wrap.querySelector('.tooltip');
+      tip.innerText = IMAGE_TOOLTIPS[file] || (data.correct_indices.includes(i) ? "AI 이미지입니다." : "AI 이미지가 아닙니다!");
+
+      // 테두리 색상
+      if (data.correct_indices.includes(i)) {
+        wrap.classList.remove('selected');
+        wrap.classList.add('correct');
+      } else if (selected.includes(i)) {
+        wrap.classList.remove('selected');
+        wrap.classList.add('wrong-selected');
+      }
+
+      wrap.classList.add('revealed');  // 호버 시 툴팁 활성화
+    });
+
+    const resultEl = document.getElementById("result");
+    const msg = data.is_correct
+      ? '<span class="result-correct">✅ 정답!</span>'
+      : '<span class="result-wrong">❌ 오답!</span>';
+
+    if (!infinite && round === totalRounds) {
+      resultEl.innerHTML = msg + '<div class="action-btns">' +
+        '<button class="action-btn secondary" onclick="continueGame()">이어하기</button>' +
+        '<button class="action-btn primary" onclick="showGameOver()">결과보기</button>' +
+        '</div>';
+    } else if (infinite) {
+      if (!data.is_correct) { showGameOver(); return; }
+      resultEl.innerHTML = '<span class="result-correct">✅ 정답!</span>' +
+        '<div class="action-btns">' +
+        '<button class="action-btn primary" onclick="nextRound()">다음 →</button>' +
+        '<button class="action-btn secondary" onclick="showGameOver()">그만하기</button>' +
+        '</div>';
+    } else {
+      resultEl.innerHTML = msg +
+        '<div class="action-btns">' +
+        '<button class="action-btn primary" onclick="nextRound()">다음 문제 →</button>' +
+        '</div>';
+    }
+  });
+});
+
+function nextRound() {
+  localStorage.setItem("round", round + 1);
+  location.reload();
+}
+
+function continueGame() {
+  localStorage.setItem("infinite", "true");
+  localStorage.setItem("round", round + 1);
+  location.reload();
+}
+
+function showGameOver() {
+  document.querySelector('.container').innerHTML = `
+    <div class="gameover">
+      <p>GAME OVER</p>
+      <h2>최종 결과</h2>
+      <div class="final-score">${score}</div>
+      <p style="font-size:15px; color:#a8b2d8;">라운드 ${round}까지 진행</p>
+      <div class="action-btns">
+        <button class="action-btn primary" onclick="restart()">다시하기</button>
+      </div>
+    </div>`;
+}
+
+function restart() {
+  localStorage.setItem("round", 1);
+  localStorage.setItem("score", 0);
+  localStorage.setItem("infinite", "false");
+  location.href = "/";
+}
+</script>
+</body>
+</html>

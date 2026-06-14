@@ -5,395 +5,208 @@
 <title>AI vs Human</title>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&display=swap');
-
   * { box-sizing: border-box; margin: 0; padding: 0; }
 
   body {
     font-family: 'Inter', Arial, sans-serif;
     background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
     color: white;
-    display: flex;
-    justify-content: center;
-    align-items: center;
     min-height: 100vh;
-    padding: 24px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 30px 20px 40px;
   }
 
-  .container {
-    background: rgba(255,255,255,0.05);
-    backdrop-filter: blur(12px);
-    border: 1px solid rgba(255,255,255,0.1);
-    padding: 32px;
-    border-radius: 24px;
+  .top-bar {
     width: 100%;
-    max-width: 560px;
-  }
-
-  .header {
+    max-width: 540px;
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 8px;
-  }
-
-  #roundText {
-    font-size: 13px;
-    font-weight: 600;
-    color: #a8b2d8;
-    letter-spacing: 1px;
-    text-transform: uppercase;
-  }
-
-  #scoreText {
-    font-size: 13px;
-    font-weight: 600;
-    color: #a8b2d8;
-  }
-
-  .question {
-    font-size: 18px;
-    font-weight: 700;
-    margin-bottom: 20px;
-    color: #e6f1ff;
-  }
-
-  .grid {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 10px;
     margin-bottom: 24px;
   }
-
-  /* ── 이미지 카드 ── */
-  .img-wrap {
-    position: relative;
-    border-radius: 12px;
-    overflow: visible;       /* 툴팁이 카드 밖으로 나오도록 */
-    aspect-ratio: 1;
-    cursor: pointer;
-    border: 3px solid transparent;
-    transition: border-color 0.2s, transform 0.15s;
-  }
-
-  .img-wrap > img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    display: block;
-    pointer-events: none;
-    border-radius: 9px;
-  }
-
-  .img-wrap:hover { transform: scale(1.03); }
-
-  .img-wrap.selected {
-    border-color: #e040fb;
-    box-shadow: 0 0 0 2px #e040fb55;
-  }
-
-  .img-wrap.selected::after {
-    content: "✓";
-    position: absolute;
-    top: 6px; right: 8px;
-    background: #e040fb;
-    color: white;
-    font-size: 13px;
-    font-weight: 700;
-    width: 22px; height: 22px;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    z-index: 2;
-  }
-
-  .img-wrap.correct {
-    border-color: #00e676;
-    box-shadow: 0 0 0 2px #00e67655;
-  }
-
-  .img-wrap.correct::after {
-    content: "AI";
-    position: absolute;
-    top: 6px; right: 8px;
-    background: #00e676;
-    color: #000;
+  .round-info { font-size: 14px; color: #a8b2d8; }
+  .score-info { font-size: 14px; color: #a8b2d8; }
+  .mode-badge {
     font-size: 11px;
-    font-weight: 800;
-    padding: 2px 7px;
-    border-radius: 10px;
-    z-index: 2;
+    font-weight: 700;
+    background: linear-gradient(135deg, #f6c90e, #f97316);
+    color: #1a1a2e;
+    padding: 3px 10px;
+    border-radius: 20px;
+    letter-spacing: 0.5px;
   }
 
-  .img-wrap.wrong-selected {
-    border-color: #ff5252;
-    box-shadow: 0 0 0 2px #ff525255;
+  h2 {
+    font-size: 20px;
+    font-weight: 700;
+    margin-bottom: 20px;
+    color: #e0c3fc;
+    text-align: center;
   }
 
-  /* ── 툴팁 ── */
-  .tooltip {
+  .image-wrap {
+    width: 100%;
+    max-width: 440px;
+    border-radius: 16px;
+    overflow: hidden;
+    box-shadow: 0 8px 40px rgba(0,0,0,0.5);
+    margin-bottom: 24px;
+    position: relative;
+  }
+  .image-wrap img {
+    width: 100%;
+    display: block;
+    image-orientation: none; /* EXIF 무시하고 원본 그대로 */
+  }
+
+  .overlay {
     display: none;
     position: absolute;
-    bottom: calc(100% + 8px);
-    left: 50%;
-    transform: translateX(-50%);
-    background: rgba(15, 20, 40, 0.95);
-    border: 1px solid rgba(255,255,255,0.15);
-    color: #e6f1ff;
-    font-size: 12px;
-    font-weight: 500;
-    line-height: 1.5;
-    padding: 8px 12px;
-    border-radius: 10px;
-    white-space: normal;
-    width: 160px;
-    text-align: center;
-    z-index: 99;
-    pointer-events: none;
-    box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+    inset: 0;
+    border-radius: 16px;
+    justify-content: center;
+    align-items: center;
+    font-size: 28px;
+    font-weight: 900;
   }
+  .overlay.correct   { background: rgba(34,197,94,0.55);  color: #fff; display: flex; }
+  .overlay.incorrect { background: rgba(239,68,68,0.55);  color: #fff; display: flex; }
 
-  .tooltip::after {
-    content: "";
-    position: absolute;
-    top: 100%; left: 50%;
-    transform: translateX(-50%);
-    border: 6px solid transparent;
-    border-top-color: rgba(15, 20, 40, 0.95);
-  }
-
-  /* 제출 후에만 툴팁 표시 */
-  .img-wrap.revealed:hover .tooltip { display: block; }
-
-  /* ── 버튼 ── */
-  .submit-btn {
-    width: 100%;
-    padding: 14px;
+  .btn-group { display: flex; gap: 14px; margin-bottom: 20px; }
+  .btn {
+    padding: 14px 36px;
     font-size: 16px;
     font-weight: 700;
-    background: linear-gradient(135deg, #667eea, #764ba2);
-    color: white;
     border: none;
-    border-radius: 14px;
-    cursor: pointer;
-    transition: opacity 0.2s, transform 0.15s;
-    box-shadow: 0 4px 20px rgba(102,126,234,0.35);
-  }
-
-  .submit-btn:hover { opacity: 0.9; transform: translateY(-1px); }
-  .submit-btn:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
-
-  #result {
-    margin-top: 18px;
-    font-size: 15px;
-    text-align: center;
-    line-height: 1.7;
-    color: #e6f1ff;
-  }
-
-  .result-correct { color: #00e676; font-weight: 700; font-size: 20px; }
-  .result-wrong   { color: #ff5252; font-weight: 700; font-size: 20px; }
-
-  .action-btns {
-    display: flex;
-    gap: 10px;
-    margin-top: 14px;
-    justify-content: center;
-  }
-
-  .action-btn {
-    padding: 10px 24px;
     border-radius: 50px;
-    border: none;
-    font-size: 14px;
-    font-weight: 600;
     cursor: pointer;
-    transition: transform 0.15s;
+    transition: transform 0.15s, box-shadow 0.15s;
   }
+  .btn-ai    { background: linear-gradient(135deg, #667eea, #764ba2); color: white; box-shadow: 0 6px 24px rgba(102,126,234,0.4); }
+  .btn-human { background: linear-gradient(135deg, #f093fb, #f5576c); color: white; box-shadow: 0 6px 24px rgba(245,87,108,0.4); }
+  .btn:hover    { transform: translateY(-2px); }
+  .btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
 
-  .action-btn:hover { transform: translateY(-2px); }
-  .action-btn.primary   { background: #667eea; color: white; }
-  .action-btn.secondary { background: rgba(255,255,255,0.1); color: white; border: 1px solid rgba(255,255,255,0.2); }
-
-  .gameover {
-    text-align: center;
-    padding: 20px 0;
+  .next-btn {
+    display: none;
+    padding: 12px 40px;
+    font-size: 15px;
+    font-weight: 700;
+    background: rgba(255,255,255,0.1);
+    border: 1px solid rgba(255,255,255,0.3);
+    color: white;
+    border-radius: 50px;
+    cursor: pointer;
+    margin-bottom: 20px;
+    transition: background 0.2s;
   }
+  .next-btn:hover { background: rgba(255,255,255,0.2); }
 
-  .gameover h2 { font-size: 32px; margin-bottom: 12px; }
-  .gameover .final-score { font-size: 48px; font-weight: 900; color: #e0c3fc; margin: 16px 0; }
-  .gameover p { color: #8892b0; margin-bottom: 24px; }
+  .tip-section {
+    width: 100%;
+    max-width: 540px;
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(255,255,255,0.12);
+    border-radius: 16px;
+    padding: 16px 22px;
+    margin-top: 8px;
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+  }
+  .tip-icon  { font-size: 18px; flex-shrink: 0; margin-top: 1px; }
+  .tip-label { font-size: 11px; font-weight: 700; letter-spacing: 1.2px; text-transform: uppercase; color: #f6c90e; margin-bottom: 4px; }
+  .tip-text  { font-size: 13px; color: #c8d0e7; line-height: 1.6; }
 </style>
 </head>
 <body>
-<div class="container">
-  <div class="header">
-    <span id="roundText"></span>
-    <span id="scoreText"></span>
+
+<div class="top-bar">
+  <span class="round-info">
+    {% if continue_mode %}
+      <span class="mode-badge">🔥 계속하기</span>&nbsp; 라운드 {{ current_round }}
+    {% else %}
+      라운드 {{ current_round }} / {{ total_rounds }}
+    {% endif %}
+  </span>
+  <span class="score-info">점수 <span id="scoreNum">{{ current_score }}</span></span>
+</div>
+
+<h2>이 이미지는 AI가 만든 것일까요?</h2>
+
+<div class="image-wrap">
+  <img src="/static/images/{{ image.file }}" alt="퀴즈 이미지">
+  <div class="overlay" id="overlay"></div>
+</div>
+
+<div class="btn-group" id="btnGroup">
+  <button class="btn btn-ai"    onclick="submitAnswer('AI')">🤖 AI 생성</button>
+  <button class="btn btn-human" onclick="submitAnswer('HUMAN')">📷 실제 사진</button>
+</div>
+
+<button class="next-btn" id="nextBtn" onclick="nextRound()">다음 라운드 →</button>
+
+<div class="tip-section">
+  <div class="tip-icon">💡</div>
+  <div>
+    <div class="tip-label">Tip</div>
+    <div class="tip-text" id="tipText"></div>
   </div>
-
-  <p class="question">AI가 생성한 이미지를 모두 골라보세요</p>
-
-  <div class="grid">
-    {% for img in images %}
-    <div class="img-wrap" data-index="{{ loop.index0 }}" data-file="{{ img.file }}">
-      <img src="/static/images/{{ img.file }}">
-      <div class="tooltip"></div>
-    </div>
-    {% endfor %}
-  </div>
-
-  <button class="submit-btn" id="submitBtn">제출하기</button>
-  <div id="result"></div>
 </div>
 
 <script>
-// =====================================================================
-// ✏️  툴팁 수정 방법
-// 아래 IMAGE_TOOLTIPS 객체에서 파일명을 키로 하여 툴팁 문구를 수정하세요.
-//
-// AI 이미지 예시:
-//   "ai1.jpg": "손가락 개수가 6개로 부자연스럽고, 배경 텍스트가 깨져 있어 AI 이미지입니다."
-//
-// 사람 이미지 예시:
-//   "h1.jpg": "AI 이미지가 아닙니다!"
-//
-// 새 이미지를 추가할 경우 동일한 형식으로 한 줄 추가하면 됩니다.
-// =====================================================================
-const IMAGE_TOOLTIPS = {
-  // AI 이미지
-  "ai1.jpg": "손가락 개수가 부자연스럽고 손 모양이 왜곡되어 있어 AI 이미지입니다.",
-  "ai2.jpg": "배경의 텍스트가 의미 없이 깨져 있어 AI 이미지입니다.",
-  "ai3.jpg": "눈동자 좌우 대칭이 맞지 않고 피부 질감이 지나치게 매끄러워 AI 이미지입니다.",
-  "ai4.jpg": "귀 모양과 머리카락 경계 부분이 부자연스럽게 흐릿해 AI 이미지입니다.",
-  // 사람 이미지
-  "h1.jpg": "AI 이미지가 아닙니다!",
-  "h2.jpg": "AI 이미지가 아닙니다!",
-  "h3.jpg": "AI 이미지가 아닙니다!",
-  "h4.jpg": "AI 이미지가 아닙니다!",
-  "h5.jpg": "AI 이미지가 아닙니다!",
-  "h6.jpg": "AI 이미지가 아닙니다!"
-};
-// =====================================================================
+  const imageData    = {{ image | tojson }};
+  const continueMode = {{ 'true' if continue_mode else 'false' }};
 
-let selected = [];
-let round = Number(localStorage.getItem("round"));
-let score = Number(localStorage.getItem("score"));
-let infinite = localStorage.getItem("infinite") === "true";
-let totalRounds = {{ total_rounds }};
-let submitted = false;
+  const tips = [
+    "손가락 개수를 확인해 보세요. AI는 손을 그리기 어려워 손가락이 6개이거나 뭉개진 경우가 많아요.",
+    "이미지 속 간판이나 문자를 확인하세요. AI가 생성한 텍스트는 알아보기 힘든 이상한 문자로 표현될 수 있어요.",
+    "양쪽 귀·귀걸이·안경을 비교해 보세요. 좌우 모양이 다르거나 구조가 어색한 경우 AI일 가능성이 높아요.",
+    "벽돌, 창문, 울타리 같은 반복 패턴이 불규칙하게 흐트러진다면 AI가 생성한 이미지일 수 있어요.",
+    "피부와 머리카락의 경계를 살펴보세요. 지나치게 매끈하거나 경계가 흐릿하게 번지면 AI 이미지예요.",
+    "조명, 피부, 구도가 너무 완벽하다면 의심해 보세요. 과도한 완벽함은 AI의 특징 중 하나예요.",
+    "배경이 흐리거나 뭉개진 부분이 있나요? AI는 주요 피사체 외의 디테일을 종종 뭉개서 처리해요.",
+    "눈의 반사광이 자연스러운지 확인하세요. AI 이미지는 눈빛이 비현실적으로 빛나는 경우가 있어요."
+  ];
+  document.getElementById("tipText").textContent = tips[Math.floor(Math.random() * tips.length)];
 
-document.getElementById("roundText").innerText = infinite
-  ? "Round " + round
-  : "Round " + round + " / " + totalRounds;
-document.getElementById("scoreText").innerText = "점수 " + score;
+  let answered = false;
 
-document.querySelectorAll('.img-wrap').forEach(wrap => {
-  wrap.addEventListener('click', function() {
-    if (submitted) return;
-    const index = Number(this.dataset.index);
-    if (selected.includes(index)) {
-      selected = selected.filter(i => i !== index);
-      this.classList.remove('selected');
-    } else {
-      selected.push(index);
-      this.classList.add('selected');
-    }
-  });
-});
+  function submitAnswer(answer) {
+    if (answered) return;
+    answered = true;
+    document.querySelectorAll('.btn').forEach(b => b.disabled = true);
 
-document.getElementById("submitBtn").addEventListener('click', function() {
-  if (submitted) return;
-  submitted = true;
-  this.disabled = true;
+    fetch('/check', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({ answer: answer, label: imageData.label })
+    })
+    .then(r => r.json())
+    .then(data => {
+      const overlay = document.getElementById('overlay');
+      overlay.className = 'overlay ' + (data.is_correct ? 'correct' : 'incorrect');
+      overlay.textContent = data.is_correct
+        ? '✅ 정답!'
+        : (data.correct_label === 'AI' ? '❌ AI 이미지였어요!' : '❌ 실제 사진이었어요!');
 
-  fetch('/check', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ selected, images: {{ images | tojson }} })
-  })
-  .then(res => res.json())
-  .then(data => {
-    if (data.is_correct) score++;
-    localStorage.setItem("score", score);
+      // 서버 점수로 동기화
+      document.getElementById("scoreNum").textContent = data.score;
 
-    // 정답 표시 + 툴팁 세팅
-    document.querySelectorAll('.img-wrap').forEach(wrap => {
-      const i = Number(wrap.dataset.index);
-      const file = wrap.dataset.file;
-
-      // 툴팁 텍스트 삽입
-      const tip = wrap.querySelector('.tooltip');
-      tip.innerText = IMAGE_TOOLTIPS[file] || (data.correct_indices.includes(i) ? "AI 이미지입니다." : "AI 이미지가 아닙니다!");
-
-      // 테두리 색상
-      if (data.correct_indices.includes(i)) {
-        wrap.classList.remove('selected');
-        wrap.classList.add('correct');
-      } else if (selected.includes(i)) {
-        wrap.classList.remove('selected');
-        wrap.classList.add('wrong-selected');
+      const nextBtn = document.getElementById('nextBtn');
+      if (data.game_over) {
+        nextBtn.textContent = '결과 보기 →';
+        nextBtn.onclick = () => location.href = '/result';
       }
-
-      wrap.classList.add('revealed');  // 호버 시 툴팁 활성화
+      nextBtn.style.display = 'inline-block';
     });
+  }
 
-    const resultEl = document.getElementById("result");
-    const msg = data.is_correct
-      ? '<span class="result-correct">✅ 정답!</span>'
-      : '<span class="result-wrong">❌ 오답!</span>';
-
-    if (!infinite && round === totalRounds) {
-      resultEl.innerHTML = msg + '<div class="action-btns">' +
-        '<button class="action-btn secondary" onclick="continueGame()">이어하기</button>' +
-        '<button class="action-btn primary" onclick="showGameOver()">결과보기</button>' +
-        '</div>';
-    } else if (infinite) {
-      if (!data.is_correct) { showGameOver(); return; }
-      resultEl.innerHTML = '<span class="result-correct">✅ 정답!</span>' +
-        '<div class="action-btns">' +
-        '<button class="action-btn primary" onclick="nextRound()">다음 →</button>' +
-        '<button class="action-btn secondary" onclick="showGameOver()">그만하기</button>' +
-        '</div>';
-    } else {
-      resultEl.innerHTML = msg +
-        '<div class="action-btns">' +
-        '<button class="action-btn primary" onclick="nextRound()">다음 문제 →</button>' +
-        '</div>';
-    }
-  });
-});
-
-function nextRound() {
-  localStorage.setItem("round", round + 1);
-  location.reload();
-}
-
-function continueGame() {
-  localStorage.setItem("infinite", "true");
-  localStorage.setItem("round", round + 1);
-  location.reload();
-}
-
-function showGameOver() {
-  document.querySelector('.container').innerHTML = `
-    <div class="gameover">
-      <p>GAME OVER</p>
-      <h2>최종 결과</h2>
-      <div class="final-score">${score}</div>
-      <p style="font-size:15px; color:#a8b2d8;">라운드 ${round}까지 진행</p>
-      <div class="action-btns">
-        <button class="action-btn primary" onclick="restart()">다시하기</button>
-      </div>
-    </div>`;
-}
-
-function restart() {
-  localStorage.setItem("round", 1);
-  localStorage.setItem("score", 0);
-  localStorage.setItem("infinite", "false");
-  location.href = "/";
-}
+  function nextRound() {
+    location.href = '/game';
+  }
 </script>
 </body>
 </html>

@@ -1,79 +1,151 @@
-from flask import Flask, render_template, request, jsonify, session
+from flask import Flask, render_template, request, jsonify, session, redirect, url_for
 import random
 
 app = Flask(__name__)
-app.secret_key = 'your-secret-key-here'  # ✏️ 원하는 문자열로 변경 가능
+app.secret_key = 'your-secret-key-here'
 
-# =====================================================================
-# ✏️  이미지 파일명 수정 방법
-# 아래 리스트에 실제 파일명을 정확히 입력하세요.
-# 파일은 static/images/ 폴더 안에 있어야 합니다.
-# =====================================================================
-ai_images    = ["ai1.jpg", "ai2.jpg", "ai3.jpg", "ai4.jpg"]
-human_images = ["h1.jpg", "h2.jpg", "h3.jpg", "h4.jpg", "h5.jpg", "h6.jpg"]
-# =====================================================================
+ai_images    = ["Ai (1).jpg", "Ai (2).jpg", "Ai (3).jpg", "Ai (4).jpg", "Ai (5).jpg", "Ai (6).jpg", "Ai (7).jpg", "Ai (8).jpg", "Ai (9).jpg", "Ai (10).jpg", "Ai (11).jpg", "Ai (12).jpg", "Ai (13).jpg", "Ai (14).jpg", "Ai (15).jpg", "Ai (16).jpg", "Ai (1).png", "Ai (2).png", "Ai (3).png", "Ai (4).png", "Ai (5).png", "Ai (6).png", "Ai (7).png", "Ai (8).png", "Ai (9).png", "Ai (10).png", "Ai (11).png", "Ai (12).png", "Ai (1).webp", "Ai (2).webp"]
+human_images = ["h (1).jpg", "h (2).jpg", "h (3).jpg", "h (4).jpg", "h (5).jpg", "h (6).jpg", "h (7).jpg", "h (8).jpg", "h (9).jpg", "h (10).jpg", "h (11).jpg", "h (12).jpg", "h (13).jpg", "h (14).jpg", "h (15).jpg", "h (16).jpg", "h (17).jpg", "h (18).jpg", "h (19).jpg", "h (20).jpg", "h (21).jpg", "h (22).jpg", "h (23).jpg", "h (24).jpg", "h (25).jpg", "h (26).jpg", "h (27).jpg", "h (28).jpg", "h (29).jpg", "h (30).jpg"]
 
 TOTAL_ROUNDS = 3
 
 def generate_round():
-    # 세션에서 이미 사용한 이미지 목록 가져오기
     used_ai    = session.get('used_ai', [])
     used_human = session.get('used_human', [])
 
-    # 아직 사용하지 않은 이미지만 후보로
     available_ai    = [img for img in ai_images    if img not in used_ai]
     available_human = [img for img in human_images if img not in used_human]
 
-    # 남은 AI 이미지가 부족하면 풀 초기화
     if len(available_ai) < 1:
         available_ai = list(ai_images)
         used_ai = []
-
-    # 남은 Human 이미지가 부족하면 풀 초기화
-    if len(available_human) < 5:
+    if len(available_human) < 1:
         available_human = list(human_images)
         used_human = []
 
-    ai_count    = random.randint(1, min(3, len(available_ai)))
-    human_count = 6 - ai_count
+    is_ai = random.choice([True, False])
+    if is_ai:
+        selected = random.choice(available_ai)
+        label = "AI"
+        session['used_ai'] = used_ai + [selected]
+    else:
+        selected = random.choice(available_human)
+        label = "HUMAN"
+        session['used_human'] = used_human + [selected]
 
-    selected_ai    = random.sample(available_ai, ai_count)
-    selected_human = random.sample(available_human, human_count)
-
-    # 사용한 이미지 세션에 기록
-    session['used_ai']    = used_ai    + selected_ai
-    session['used_human'] = used_human + selected_human
-
-    images = [{"file": img, "label": "AI"}    for img in selected_ai] + \
-             [{"file": img, "label": "HUMAN"} for img in selected_human]
-
-    random.shuffle(images)
-    return images
+    session.modified = True
+    return {"file": selected, "label": label}
 
 @app.route('/')
 def start():
-    session.clear()  # 홈 화면에 오면 사용 이력 초기화
+    session.clear()
     return render_template('start.html')
 
 @app.route('/game')
 def game():
-    images = generate_round()
-    return render_template('game.html', images=images, total_rounds=TOTAL_ROUNDS)
+    # 계속하기 모드 진입: 점수/통계는 이월, 라운드 카운터만 리셋
+    if request.args.get('continue') == '1':
+        prev_score        = session.get('score', 0)
+        prev_ai_correct   = session.get('ai_correct', 0)
+        prev_ai_total     = session.get('ai_total', 0)
+        prev_human_correct= session.get('human_correct', 0)
+        prev_human_total  = session.get('human_total', 0)
+        prev_used_ai      = session.get('used_ai', [])
+        prev_used_human   = session.get('used_human', [])
+        session.clear()
+        session['continue_mode']  = True
+        session['round']          = 1
+        session['score']          = prev_score        # 이전 점수 이월
+        session['ai_correct']     = prev_ai_correct
+        session['ai_total']       = prev_ai_total
+        session['human_correct']  = prev_human_correct
+        session['human_total']    = prev_human_total
+        session['used_ai']        = prev_used_ai
+        session['used_human']     = prev_used_human
+        session.modified = True
+
+    # 게임이 이미 종료된 상태에서 /game 재접근 차단
+    if session.get('game_ended'):
+        return redirect(url_for('result'))
+
+    continue_mode = session.get('continue_mode', False)
+    current_round = session.get('round', 1)
+
+    if not continue_mode and current_round > TOTAL_ROUNDS:
+        return redirect(url_for('result'))
+
+    image = generate_round()
+    return render_template('game.html',
+        image=image,
+        total_rounds=TOTAL_ROUNDS,
+        current_round=current_round,
+        continue_mode=continue_mode,
+        current_score=session.get('score', 0)
+    )
 
 @app.route('/check', methods=['POST'])
 def check():
-    data    = request.json
-    selected = data['selected']
-    images  = data['images']
+    # 이미 종료된 게임이면 무시
+    if session.get('game_ended'):
+        return jsonify({'is_correct': False, 'correct_label': '', 'game_over': True,
+                        'score': session.get('score', 0)})
 
-    correct_indices = [i for i, img in enumerate(images) if img['label'] == 'AI']
-    is_correct      = set(selected) == set(correct_indices)
+    data       = request.json
+    answer     = data['answer']
+    label      = data['label']
+    is_correct = (answer == label)
+
+    # 통계 업데이트
+    if label == 'AI':
+        session['ai_total']   = session.get('ai_total', 0) + 1
+        if is_correct:
+            session['ai_correct'] = session.get('ai_correct', 0) + 1
+    else:
+        session['human_total']   = session.get('human_total', 0) + 1
+        if is_correct:
+            session['human_correct'] = session.get('human_correct', 0) + 1
+
+    if is_correct:
+        session['score'] = session.get('score', 0) + 1
+
+    session['round'] = session.get('round', 1) + 1
+    session.modified = True
+
+    continue_mode = session.get('continue_mode', False)
+
+    if continue_mode:
+        game_over = not is_correct          # 계속하기: 틀리면 즉시 종료
+    else:
+        game_over = session['round'] > TOTAL_ROUNDS  # 일반: 3라운드 완료 후 종료
+
+    if game_over:
+        session['game_ended'] = True
+        session.modified = True
 
     return jsonify({
-        "is_correct":      is_correct,
-        "correct_indices": correct_indices,
-        "explanation":     "AI 이미지는 손, 텍스트, 배경 디테일에서 오류가 나타날 수 있지만 항상 구별 가능한 것은 아닙니다."
+        'is_correct':    is_correct,
+        'correct_label': label,
+        'game_over':     game_over,
+        'score':         session.get('score', 0)
     })
+
+@app.route('/result')
+def result():
+    score         = session.get('score', 0)
+    ai_correct    = session.get('ai_correct', 0)
+    ai_total      = session.get('ai_total', 0)
+    human_correct = session.get('human_correct', 0)
+    human_total   = session.get('human_total', 0)
+    continue_mode = session.get('continue_mode', False)
+    all_correct   = (score == TOTAL_ROUNDS) and not continue_mode
+
+    return render_template('result.html',
+        score=score, total=TOTAL_ROUNDS,
+        ai_correct=ai_correct, ai_total=ai_total,
+        human_correct=human_correct, human_total=human_total,
+        continue_mode=continue_mode,
+        all_correct=all_correct
+    )
 
 if __name__ == '__main__':
     app.run(debug=True)

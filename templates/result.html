@@ -46,14 +46,14 @@
   .score-label {
     font-size: 14px;
     color: #8892b0;
-    margin-bottom: 36px;
+    margin-bottom: 28px;
   }
 
   /* 세부 점수 카드 */
   .score-cards {
     display: flex;
     gap: 14px;
-    margin-bottom: 36px;
+    margin-bottom: 28px;
   }
   .score-card {
     flex: 1;
@@ -64,13 +64,26 @@
   }
   .card-icon  { font-size: 26px; margin-bottom: 8px; }
   .card-label { font-size: 12px; color: #8892b0; margin-bottom: 8px; }
-  .card-score {
-    font-size: 28px;
-    font-weight: 900;
-  }
+  .card-score { font-size: 28px; font-weight: 900; }
   .card-score .correct   { color: #4ade80; }
   .card-score .separator { color: #8892b0; font-size: 20px; }
   .card-score .total     { color: #8892b0; font-size: 20px; }
+
+  /* 인용 멘트 */
+  .quote-box {
+    background: rgba(255,255,255,0.05);
+    border-left: 3px solid #667eea;
+    border-radius: 0 12px 12px 0;
+    padding: 16px 20px;
+    margin-bottom: 28px;
+    text-align: left;
+  }
+  .quote-text {
+    font-size: 13px;
+    color: #a8b2d8;
+    line-height: 1.8;
+    font-style: italic;
+  }
 
   /* 버튼 */
   .btn-group {
@@ -93,7 +106,6 @@
     color: white;
   }
   .btn-home:hover { background: rgba(255,255,255,0.2); transform: translateY(-2px); }
-
   .btn-continue {
     background: linear-gradient(135deg, #f6c90e, #f97316);
     color: #1a1a2e;
@@ -148,6 +160,14 @@
         <span class="separator"> / </span>
         <span class="total">{{ human_total }}</span>
       </div>
+    </div>
+  </div>
+
+  <!-- 인용 멘트 -->
+  <div class="quote-box">
+    <div class="quote-text">
+      당신이 무심코 지나친 일상 속 사진도 가짜일 수 있으며,
+      사실과 거짓을 구별하는 능력이 그 어느 때보다 중요해지고 있습니다.
     </div>
   </div>
 
